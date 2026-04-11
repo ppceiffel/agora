@@ -105,40 +105,40 @@ uvicorn agora.main:app --reload
 
 ---
 
-### 🔲 Phase 1 — Backend complet (À FAIRE)
+### ✅ Phase 1 — Backend complet (TERMINÉ — 11 avril 2026)
 
 **Objectif :** Tous les endpoints dont le frontend a besoin.
 
-#### 1.1 Router arguments (`agora/api/arguments/router.py`)
-- [ ] `GET /arguments/{referendum_id}` — top 3 pour + top 3 contre (triés par upvotes)
-- [ ] `POST /arguments/` — soumettre un argument (auth requise, champ `position`: "pour"|"contre")
-- [ ] `POST /arguments/{id}/upvote` — upvoter (utilise `ArgumentVote`, contrainte unique, retourne 409 si déjà upvoté)
-- [ ] `DELETE /arguments/{id}/upvote` — retirer son upvote
-- [ ] `POST /arguments/{id}/read` — tracer lecture (alimente `ArgumentRead`, score Fair-Play +5)
-- [ ] Brancher le router dans `agora/main.py`
+#### 1.1 Router arguments (`agora/api/arguments/router.py`) ✅
+- [x] `GET /arguments/{referendum_id}` — top 3 pour + top 3 contre (triés par upvotes)
+- [x] `POST /arguments/` — soumettre un argument (auth requise, 1 par position par user par référendum)
+- [x] `POST /arguments/{id}/upvote` — upvoter (contrainte unique via `ArgumentVote`, 409 si déjà upvoté)
+- [x] `DELETE /arguments/{id}/upvote` — retirer son upvote
+- [x] `POST /arguments/{id}/read` — tracer lecture (alimente `ArgumentRead`, +1 fairplay_count)
+- [x] Branché dans `agora/main.py`
 
-#### 1.2 Router users (`agora/api/users/router.py`)
-- [ ] `GET /users/me` — profil complet : score, votes_count, values_profile (JSON décodé), nickname
-- [ ] `PATCH /users/me` — mettre à jour le nickname
-- [ ] `GET /users/me/history` — liste des votes passés : `[{question, week_start, grade, values_scores}]`
-- [ ] Brancher le router dans `agora/main.py`
+#### 1.2 Router users (`agora/api/users/router.py`) ✅
+- [x] `GET /users/me` — profil complet : score, votes_count, values_profile (JSON décodé), nickname
+- [x] `PATCH /users/me` — mettre à jour le nickname (validation 2-50 chars, unicité)
+- [x] `GET /users/me/history` — votes passés avec scores Schwartz par vote
+- [x] Branché dans `agora/main.py`
 
-#### 1.3 Middleware profil Schwartz
-- [ ] Après chaque `POST /votes/` réussi, recalculer et sauvegarder `user.values_profile`
-  - Logique : lire `referendum.values_mapping` (JSON), extraire les scores du grade voté, faire la moyenne avec les votes précédents (lus depuis `Vote` + `referendum.values_mapping`)
-  - Sauvegarder en JSON dans `user.values_profile`
+#### 1.3 Middleware profil Schwartz ✅
+- [x] Après chaque `POST /votes/` réussi, `_update_values_profile()` recalcule la moyenne Schwartz
+  - Lit tous les votes de l'user + `referendum.values_mapping` de chaque référendum
+  - Sauvegarde en JSON dans `user.values_profile` : `{scores: {valeur: float}, votes_count: int}`
 
-#### 1.4 Endpoints admin
-- [ ] `POST /admin/generate-referendum` — déclenche le pipeline AI manuellement
-  - Protégé par header `X-Admin-Secret` (valeur dans `.env`)
-  - Retourne l'id du référendum créé
-- [ ] `GET /admin/referendums` — liste tous les référendums (actifs et archivés)
-- [ ] Ajouter `admin_secret: str` dans `agora/core/config.py`
-- [ ] Brancher le router dans `agora/main.py`
+#### 1.4 Endpoints admin (`agora/api/admin/router.py`) ✅
+- [x] `GET /admin/referendums` — liste tous les référendums avec nombre de votes
+- [x] `POST /admin/generate-referendum` — stub (branché en Phase 2), vérifie ANTHROPIC_API_KEY
+- [x] `PATCH /admin/referendums/{id}/deactivate` — désactive un référendum
+- [x] Protégé par header `X-Admin-Secret` (valeur `ADMIN_SECRET` dans `.env`)
+- [x] Branché dans `agora/main.py`
 
-#### 1.5 Fix mineur router votes
-- [ ] Vérifier que `cast_vote` met aussi à jour `user.fairplay_count` (actuellement seul `enlightened_score` et `votes_count` sont mis à jour)
-- [ ] Ajouter le calcul du bonus Fair-Play dans `cast_vote` (si `ArgumentRead` existe pour cet utilisateur sur ce référendum)
+#### 1.5 Corrections votes/router.py ✅
+- [x] Bonus quiz (+10), bonus vote (+10), bonus fair-play (+5 si ≥2 arguments lus)
+- [x] `distribution_pct` ajouté dans `VoteResultOut`
+- [x] `CORS` mis à jour : `allow_origins=[settings.frontend_url]` (plus de `"*"`)
 
 ---
 

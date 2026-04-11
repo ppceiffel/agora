@@ -1,14 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from agora.api.admin.router import router as admin_router
+from agora.api.arguments.router import router as arguments_router
 from agora.api.auth.router import router as auth_router
 from agora.api.referendum.router import router as referendum_router
+from agora.api.users.router import router as users_router
 from agora.api.votes.router import router as votes_router
 from agora.core.config import settings
-from agora.core.database import Base, engine
-
-# Création des tables au démarrage
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.app_name,
@@ -18,7 +17,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[settings.frontend_url],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -27,8 +26,11 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(referendum_router)
 app.include_router(votes_router)
+app.include_router(arguments_router)
+app.include_router(users_router)
+app.include_router(admin_router)
 
 
-@app.get("/health")
+@app.get("/health", tags=["health"])
 def health_check():
     return {"status": "ok", "app": settings.app_name}

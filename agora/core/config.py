@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     # CORS — URL du frontend en production
     frontend_url: str = "http://localhost:3000"
 
+    # Admin — protège les endpoints /admin/*
+    admin_secret: str | None = None
+
     # Auth
     otp_expire_minutes: int = 10
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 jours
