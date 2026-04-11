@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agora.core.database import Base
@@ -23,7 +23,7 @@ class Vote(Base):
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     referendum_id: Mapped[str] = mapped_column(String, ForeignKey("referendums.id"), nullable=False)
     grade: Mapped[str] = mapped_column(String, nullable=False)  # MajorityJudgmentGrade
-    quiz_passed: Mapped[bool] = mapped_column(String, nullable=False, default=False)
+    quiz_passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="votes")

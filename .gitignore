@@ -59,6 +59,11 @@ local_settings.py
 db.sqlite3
 db.sqlite3-journal
 
+# Agora dev database
+agora_dev.db
+agora_dev.db-shm
+agora_dev.db-wal
+
 # Flask stuff:
 instance/
 .webassets-cache

@@ -96,6 +96,19 @@ ARGUMENTS = {
     ],
 }
 
+PAST_VOTES = [
+    {
+        "question": "Faut-il abaisser l'âge du droit de vote à 16 ans ?",
+        "week": "Semaine du 17 au 23 mars 2025",
+        "grade": "Favorable",
+    },
+    {
+        "question": "Faut-il instaurer un revenu universel de base en France ?",
+        "week": "Semaine du 24 au 30 mars 2025",
+        "grade": "Très favorable",
+    },
+]
+
 VOTE_RESULTS = {
     "Très favorable": 18,
     "Favorable": 24,

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from enum import Enum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from agora.core.database import Base
@@ -37,3 +37,16 @@ class ArgumentRead(Base):
     user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     argument_id: Mapped[str] = mapped_column(String, ForeignKey("arguments.id"), nullable=False)
     read_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class ArgumentVote(Base):
+    """Un upvote par utilisateur par argument (contrainte unique)."""
+    __tablename__ = "argument_votes"
+    __table_args__ = (
+        UniqueConstraint("user_id", "argument_id", name="uq_argument_vote_user_arg"),
+    )
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
+    argument_id: Mapped[str] = mapped_column(String, ForeignKey("arguments.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

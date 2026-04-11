@@ -1,18 +1,23 @@
+import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from twilio.rest import Client
 
 from agora.core.config import settings
 from agora.core.database import get_db
 from agora.core.security import create_access_token, generate_otp
 from agora.models.user import OTPCode, User
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-twilio_client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
+# Le client Twilio n'est initialisé que si les credentials sont configurés
+_twilio_client = None
+if settings.twilio_enabled:
+    from twilio.rest import Client
+    _twilio_client = Client(settings.twilio_account_sid, settings.twilio_auth_token)
 
 
 class SendOTPRequest(BaseModel):
@@ -50,13 +55,17 @@ def send_otp(payload: SendOTPRequest, db: Session = Depends(get_db)):
     db.add(otp)
     db.commit()
 
-    twilio_client.messages.create(
-        body=f"Votre code Agora : {code}. Valable {settings.otp_expire_minutes} minutes.",
-        from_=settings.twilio_phone_number,
-        to=payload.phone_number,
-    )
-
-    return {"message": "Code envoyé par SMS."}
+    if _twilio_client:
+        _twilio_client.messages.create(
+            body=f"Votre code Agora : {code}. Valable {settings.otp_expire_minutes} minutes.",
+            from_=settings.twilio_phone_number,
+            to=payload.phone_number,
+        )
+        return {"message": "Code envoyé par SMS."}
+    else:
+        # Mode développement : OTP dans les logs, retourné dans la réponse
+        logger.warning(f"[DEV] OTP pour {payload.phone_number} : {code}")
+        return {"message": "Mode dev — code OTP dans les logs.", "dev_code": code}
 
 
 @router.post("/verify-otp", response_model=TokenResponse)
