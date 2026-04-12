@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap');
+
+@theme {
+  --color-agora-bg:     #080808;
+  --color-agora-card:   #111111;
+  --color-agora-warm:   #161616;
+  --color-agora-border: #222222;
+  --color-agora-amber:  #c8860a;
+  --color-agora-cream:  #ede0c8;
+  --color-agora-sand:   #8a6840;
+  --color-agora-dark:   #5a3e28;
+  --color-agora-darker: #3a2410;
+  --color-agora-green:  #4c7a48;
+  --color-agora-red:    #b84030;
+
+  --font-sans: 'Inter', sans-serif;
+  --font-serif: 'Lora', Georgia, serif;
+}
+
+html, body {
+  background-color: #080808;
+  color: #ede0c8;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: #111111; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }

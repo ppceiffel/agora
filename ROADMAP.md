@@ -186,52 +186,79 @@ uvicorn agora.main:app --reload
 
 ---
 
-### 🔲 Phase 3 — Frontend Next.js (À FAIRE)
+### 🚧 Phase 3 — Frontend Next.js (EN COURS — 12 avril 2026)
 
 **Objectif :** App partageable via URL, flow complet utilisable depuis un téléphone.
 
-#### 3.1 Setup
-- [ ] `npx create-next-app@latest frontend --typescript --tailwind --app` depuis la racine
-- [ ] Configurer Tailwind avec la palette Agora dans `tailwind.config.ts` :
-  ```js
-  colors: {
-    'agora-bg': '#080808',
-    'agora-card': '#111111',
-    'agora-border': '#222222',
-    'agora-amber': '#c8860a',
-    'agora-cream': '#ede0c8',
-    'agora-sand': '#8a6840',
-    'agora-green': '#4c7a48',
-    'agora-red': '#b84030',
-  }
-  ```
-- [ ] Configurer les polices Google Fonts (Lora + Inter) dans `app/layout.tsx`
-- [ ] Configurer `NEXT_PUBLIC_API_URL` dans `.env.local` → `http://localhost:8000`
-- [ ] Créer `frontend/lib/api.ts` : fonctions fetch typées avec Bearer token
+**Contexte technique :** Next.js 16.2.3 + React 19 + Tailwind v4 + Node.js 22.15.0 portable
+(`$env:LOCALAPPDATA\node` — installé sans admin via zip portable)
 
-#### 3.2 Store global (`frontend/lib/store.ts`)
-- [ ] Zustand store : `token`, `referendum`, `quizPassed`, `voteGrade`, `fairplayRead`
-- [ ] Persister `token` dans `localStorage`
-- [ ] Vérifier validité du token au chargement (expiry dans le payload JWT)
+#### 3.1 Setup ✅
+- [x] `create-next-app@latest frontend` exécuté (Next.js 16, React 19, Tailwind v4, App Router)
+- [x] Tailwind v4 configuré via CSS `@theme` dans `app/globals.css` (pas de tailwind.config.js en v4)
+- [x] Polices Google Fonts (Lora + Inter) dans `app/layout.tsx` via `next/font/google`
+- [x] `frontend/.env.local` : `NEXT_PUBLIC_API_URL=http://localhost:8000`
+- [x] `frontend/lib/api.ts` : toutes les fonctions fetch typées (auth, referendum, quiz, arguments, votes, users)
+- [x] `frontend/lib/constants.ts` : VALUES_LABELS, GRADE_ORDER, GRADE_COLORS, GRADE_SLUGS, etc.
 
-#### 3.3 Composants partagés
-- [ ] `AgoraHeader` (logo + titre + sous-titre optionnel)
-- [ ] `StepDots` (indicateur de progression 1–5)
-- [ ] `Card`, `Badge`, `Label` (wrappers stylistiques)
-- [ ] `ValuesRadar` — Plotly.js via import dynamique Next.js (`ssr: false`)
+#### 3.2 Store global (`frontend/lib/store.ts`) ✅
+- [x] Zustand store : `token`, `referendum`, `quizPassed`, `voteGrade`, `fairplayRead`, `readArgumentIds`
+- [x] `token` et `enlightenedScore` persistés en localStorage via `persist` middleware
+- [ ] **À faire** : vérifier l'expiration du token JWT au chargement (décoder le payload, comparer `exp`)
 
-#### 3.4 Pages (reproduire fidèlement le POC `poc/app.py`)
-- [ ] `app/auth/page.tsx` — Écran 1 : téléphone + OTP + JWT
-- [ ] `app/referendum/page.tsx` — Écran 2 : question + résumé + expanders historique/scientifique
-- [ ] `app/quiz/page.tsx` — Écran 3 : 3 questions radio + validation (2/3 requis)
-- [ ] `app/arguments/page.tsx` — Écran 4 : colonnes pour/contre + upvote + checkbox Fair-Play
-- [ ] `app/vote/page.tsx` — Écran 5 : radio 5 mentions JM
-- [ ] `app/results/page.tsx` — Écran 6 : score citoyen + barre JM + radar valeurs (onglets)
-- [ ] `app/profil/page.tsx` — Profil agrégé : radar moyen + classement Schwartz + historique
+#### 3.3 Composants partagés ✅
+- [x] `components/AgoraHeader.tsx` — logo + titre + sous-titre
+- [x] `components/StepDots.tsx` — indicateur de progression 1–5
+- [x] `components/ValuesRadar.tsx` — Plotly.js via `dynamic(..., { ssr: false })`
 
-#### 3.5 PWA
-- [ ] Ajouter `public/manifest.json` (nom, icônes, couleur de thème `#080808`)
-- [ ] Meta viewport mobile-first dans `layout.tsx`
+#### 3.4 Pages ✅ (toutes créées — **à tester**)
+- [x] `app/page.tsx` — redirect → /auth
+- [x] `app/auth/page.tsx` — téléphone + OTP + JWT + mode dev (affiche le dev_code)
+- [x] `app/referendum/page.tsx` — question + résumé + expanders historique/scientifique
+- [x] `app/quiz/page.tsx` — 3 questions radio + validation (2/3 requis)
+- [x] `app/arguments/page.tsx` — colonnes pour/contre + markAsRead + Fair-Play checkbox
+- [x] `app/vote/page.tsx` — radio 5 mentions JM + castVote
+- [x] `app/results/page.tsx` — score citoyen + barre JM + radar valeurs (onglets)
+- [x] `app/profil/page.tsx` — radar agrégé + classement Schwartz + historique des votes
+
+#### 3.5 PWA ✅
+- [x] `public/manifest.json` créé (nom, thème #080808)
+- [x] `viewport`, `themeColor` dans `layout.tsx`
+
+#### ⚠️ À FAIRE POUR FINALISER PHASE 3
+
+1. **Vérifier les dépendances npm** — zustand et plotly.js pas encore confirmés installés :
+   ```powershell
+   $env:PATH = "$env:LOCALAPPDATA\node;$env:PATH"
+   cd frontend
+   npm install zustand plotly.js react-plotly.js @types/react-plotly.js
+   ```
+
+2. **Build TypeScript** — vérifier qu'il n'y a pas d'erreurs de typage :
+   ```powershell
+   cd frontend && npx tsc --noEmit
+   ```
+
+3. **Lancer le dev server et tester le flow complet** :
+   ```powershell
+   # Terminal 1 : backend
+   uvicorn agora.main:app --reload
+   python scripts/seed_dev.py  # si pas déjà fait
+
+   # Terminal 2 : frontend
+   $env:PATH = "$env:LOCALAPPDATA\node;$env:PATH"
+   cd frontend && npm run dev
+   # Ouvrir http://localhost:3000
+   ```
+
+4. **Corrections connues possibles** :
+   - `ValuesRadar` : les types Plotly peuvent nécessiter un cast (`as Plotly.Data[]`)
+   - `results/page.tsx` : le `valuesScores` est `null` si le serveur ne renvoie pas le profil immédiatement — OK, l'onglet "profil" renvoie vers `/profil`
+   - Ajouter `frontend/.gitignore` pour exclure `.env.local` et `node_modules`
+
+5. **Optimisations UI** :
+   - Ajouter un `loading.tsx` global (spinner amber)
+   - Ajouter un `error.tsx` global
 
 ---
 
