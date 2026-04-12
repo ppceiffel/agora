@@ -1,10 +1,14 @@
+"""
+Génère un quiz de compréhension à partir du résumé d'un référendum.
+Le client Anthropic est initialisé à la demande (lazy) pour ne pas bloquer
+le démarrage si ANTHROPIC_API_KEY est absente.
+"""
 import json
-
-import anthropic
+import logging
 
 from agora.core.config import settings
 
-client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+logger = logging.getLogger(__name__)
 
 QUIZ_PROMPT = """Tu es un assistant civique. On te fournit le résumé d'une question de référendum.
 Tu dois générer exactement 3 questions de quiz factuelles pour vérifier que le citoyen a compris les enjeux.
@@ -33,7 +37,16 @@ Sujet du référendum :
 
 
 def generate_quiz(summary: str) -> list[dict]:
-    """Génère 3 questions de quiz factuelles à partir du résumé d'un référendum."""
+    """
+    Génère 3 questions de quiz factuelles à partir du résumé d'un référendum.
+    Lève une exception si ANTHROPIC_API_KEY est absente ou en cas d'erreur réseau.
+    """
+    if not settings.anthropic_api_key:
+        raise RuntimeError("ANTHROPIC_API_KEY non configurée — impossible de générer le quiz.")
+
+    import anthropic
+    client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
+
     message = client.messages.create(
         model="claude-sonnet-4-6",
         max_tokens=1024,

@@ -33,20 +33,21 @@ agora/                    ← Package Python backend (FastAPI)
     votes/router.py       ← POST /votes/, GET /results (fonctionnel)
     arguments/            ← VIDE — à implémenter (Phase 1)
   ai/
-    quiz_generator.py     ← Génération de quiz via Claude (fonctionnel)
-    question_selector.py  ← ABSENT — à créer (Phase 2)
-    context_builder.py    ← ABSENT — à créer (Phase 2)
+    quiz_generator.py     ← Génération de quiz via Claude (lazy client)
+    question_selector.py  ← Sélection de la question civique (Claude Sonnet)
+    context_builder.py    ← 5 appels Claude en parallèle (historique, scientifique, arguments, valeurs)
   core/
     config.py             ← Settings Pydantic (Twilio/Claude optionnels en dev)
     database.py           ← SQLAlchemy engine (SQLite/PostgreSQL)
     security.py           ← JWT + génération OTP
-    scheduler.py          ← ABSENT — à créer (Phase 2)
+    scheduler.py          ← APScheduler (lundi 07h00 Europe/Paris) + run_pipeline_now()
   models/
     user.py               ← User, OTPCode
     referendum.py         ← Referendum, QuizQuestion
     vote.py               ← Vote (enum MajorityJudgmentGrade)
     argument.py           ← Argument, ArgumentRead, ArgumentVote
-  scraper/                ← VIDE — à implémenter (Phase 2)
+  scraper/
+    sources.py            ← RSS Le Monde + API pétitions AN (fault-tolerant)
 
 migrations/               ← Alembic (2 migrations appliquées)
 scripts/
@@ -142,44 +143,46 @@ uvicorn agora.main:app --reload
 
 ---
 
-### 🔲 Phase 2 — Pipeline AI (À FAIRE)
+### ✅ Phase 2 — Pipeline AI (TERMINÉ — 12 avril 2026)
 
 **Objectif :** Génération automatique du contenu hebdomadaire.
 
-#### 2.1 Scraper RSS (`agora/scraper/sources.py`)
-- [ ] Fetch RSS Le Monde Politique (`https://www.lemonde.fr/politique/rss_full.xml`)
-- [ ] Fetch top pétitions Assemblée Nationale (`https://petitions.assemblee-nationale.fr/api/petitions?status=running&per_page=10`)
-- [ ] Retourne une liste de dicts : `[{title, url, source, published_at}]`
-- [ ] Gérer les timeouts et erreurs réseau (retourne une liste vide en cas d'échec, pas d'exception)
+#### 2.1 Scraper RSS (`agora/scraper/sources.py`) ✅
+- [x] Fetch RSS Le Monde Politique (`https://www.lemonde.fr/politique/rss_full.xml`)
+- [x] Fetch top pétitions Assemblée Nationale (`https://petitions.assemblee-nationale.fr/api/petitions?status=running&per_page=10`)
+- [x] Retourne une liste de dicts : `[{title, url, source, published_at}]`
+- [x] Gérer les timeouts et erreurs réseau (retourne une liste vide en cas d'échec, pas d'exception)
 
-#### 2.2 Sélecteur de question IA (`agora/ai/question_selector.py`)
-- [ ] Prend la liste de titres, appelle Claude Sonnet
-- [ ] Prompt : sélectionner le sujet le plus propice au débat civique factuel, non partisan
-- [ ] Contraintes dans le prompt : pas de parti/personnalité politique, question neutre, politique publique concrète
-- [ ] Retourne JSON : `{question, summary, source_url, topic_tags}`
-- [ ] Valider le format de sortie (JSONDecodeError → retry 1 fois)
+#### 2.2 Sélecteur de question IA (`agora/ai/question_selector.py`) ✅
+- [x] Prend la liste de titres, appelle Claude Sonnet
+- [x] Prompt : sélectionner le sujet le plus propice au débat civique factuel, non partisan
+- [x] Contraintes dans le prompt : pas de parti/personnalité politique, question neutre, politique publique concrète
+- [x] Retourne JSON : `{question, summary, source_url, topic_tags}`
+- [x] Valider le format de sortie (JSONDecodeError → retry 1 fois)
 
-#### 2.3 Constructeur de contexte IA (`agora/ai/context_builder.py`)
-- [ ] 5 appels Claude séparés (fault-tolerant — valeur par défaut si échec) :
-  - `build_historical_context(question)` → markdown
-  - `build_scientific_context(question)` → markdown
-  - `build_arguments_pour(question)` → liste de 3 strings
-  - `build_arguments_contre(question)` → liste de 3 strings
-  - `build_values_mapping(question)` → JSON `{grade: [6 scores]}`
-- [ ] Chaque appel est indépendant (pas de dépendances entre eux → peuvent tourner en parallèle)
+#### 2.3 Constructeur de contexte IA (`agora/ai/context_builder.py`) ✅
+- [x] 5 appels Claude séparés (fault-tolerant — valeur par défaut si échec) :
+  - `build_historical_context(client, question)` → markdown
+  - `build_scientific_context(client, question)` → markdown
+  - `build_arguments_pour(client, question)` → liste de 3 strings
+  - `build_arguments_contre(client, question)` → liste de 3 strings
+  - `build_values_mapping(client, question)` → JSON `{grade: [6 scores]}`
+- [x] 5 appels en parallèle via `ThreadPoolExecutor(max_workers=5)`
 
-#### 2.4 Scheduler APScheduler (`agora/core/scheduler.py`)
-- [ ] `BackgroundScheduler` configuré avec timezone `Europe/Paris`
-- [ ] Job hebdomadaire : chaque lundi à 7h00
-- [ ] Orchestration du pipeline : scraper → question_selector → context_builder → quiz_generator → persist
-- [ ] Désactiver le référendum précédent (`is_active = False`) avant d'en créer un nouveau
-- [ ] En cas d'échec : logger l'erreur, garder le référendum précédent actif
-- [ ] Connecter au startup FastAPI dans `agora/main.py`
+#### 2.4 Scheduler APScheduler (`agora/core/scheduler.py`) ✅
+- [x] `BackgroundScheduler` configuré avec timezone `Europe/Paris`
+- [x] Job hebdomadaire : chaque lundi à 7h00 (`misfire_grace_time=3600`)
+- [x] Orchestration complète : scraper → question_selector → context_builder → quiz_generator → persist
+- [x] Désactive le référendum précédent avant d'en créer un nouveau
+- [x] En cas d'échec : rollback DB, log l'erreur, garde le référendum précédent actif
+- [x] `run_pipeline_now()` pour déclenchement manuel (thread daemon)
 
-#### 2.5 Mise à jour `agora/main.py`
-- [ ] Ajouter `@app.on_event("startup")` qui appelle `start_scheduler()`
-- [ ] Remplacer `allow_origins=["*"]` par `allow_origins=[settings.frontend_url]`
-- [ ] Supprimer `Base.metadata.create_all(bind=engine)` (géré par Alembic désormais)
+#### 2.5 Mise à jour `agora/main.py` ✅
+- [x] `@app.on_event("startup")` appelle `start_scheduler()`
+- [x] `@app.on_event("shutdown")` appelle `stop_scheduler()`
+- [x] `logging.basicConfig()` configuré au démarrage
+- [x] `agora/ai/quiz_generator.py` : client Anthropic initialisé en lazy (plus d'échec au démarrage si clé absente)
+- [x] `POST /admin/generate-referendum` : branche le vrai pipeline via `run_pipeline_now()`
 
 ---
 

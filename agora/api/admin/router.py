@@ -101,10 +101,13 @@ def trigger_generate_referendum(
                    "Désactivez-le d'abord ou attendez la semaine prochaine.",
         )
 
-    # En Phase 2, on appellera ici : await pipeline.run()
+    # Déclenche le pipeline dans un thread daemon (retour immédiat 202)
+    from agora.core.scheduler import run_pipeline_now
+    run_pipeline_now()
+
     return {
-        "message": "Pipeline AI branché en Phase 2. Configurez ANTHROPIC_API_KEY et relancez.",
-        "status": "pending_phase2",
+        "message": "Pipeline AI déclenché. Le référendum sera créé dans quelques secondes.",
+        "status": "running",
     }
 
 

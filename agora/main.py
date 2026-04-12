@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,10 +11,15 @@ from agora.api.users.router import router as users_router
 from agora.api.votes.router import router as votes_router
 from agora.core.config import settings
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+
 app = FastAPI(
     title=settings.app_name,
     description="API du référendum intelligent — Agora",
-    version="0.1.0",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -29,6 +36,20 @@ app.include_router(votes_router)
 app.include_router(arguments_router)
 app.include_router(users_router)
 app.include_router(admin_router)
+
+
+@app.on_event("startup")
+def startup_event() -> None:
+    """Démarre le scheduler hebdomadaire au lancement de l'API."""
+    from agora.core.scheduler import start_scheduler
+    start_scheduler()
+
+
+@app.on_event("shutdown")
+def shutdown_event() -> None:
+    """Arrête proprement le scheduler à l'extinction de l'API."""
+    from agora.core.scheduler import stop_scheduler
+    stop_scheduler()
 
 
 @app.get("/health", tags=["health"])
